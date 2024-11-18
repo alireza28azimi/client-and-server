@@ -1,0 +1,54 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net"
+)
+
+func main() {
+	const (
+		network = "tcp"
+		address = "127.0.0.1:1986"
+	)
+
+	// create new listener
+	listener, err := net.Listen(network, address)
+	if err != nil {
+		log.Fatalln("can't listen on given address", address, err)
+	}
+	defer listener.Close()
+
+	fmt.Println("server listening on", listener.Addr())
+
+	for {
+		// listen for new connection
+		connection, aErr := listener.Accept()
+		if aErr != nil {
+			log.Println("can't listen to new connection", aErr)
+
+			continue
+		}
+
+		// process request
+		var data = make([]byte, 1024)
+		numberOfReadBytes, rErr := connection.Read(data)
+		if rErr != nil {
+			log.Println("can't read data from connection", rErr)
+
+			continue
+		}
+
+		fmt.Printf("client address: %s, numOfReadBytes: %d, data: %s\n",
+			connection.RemoteAddr(), numberOfReadBytes, string(data))
+
+		_, wErr := connection.Write([]byte(`your message received`))
+		if wErr != nil {
+			log.Println("can't write data to connection", rErr)
+
+			continue
+		}
+
+		connection.Close()
+	}
+}
